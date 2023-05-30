@@ -1,0 +1,40 @@
+version: "3"
+
+#Este docker stack creará cuatro servicios y cada uno se ejecutará con un número diferente de instancias al hacer el deploy
+services:
+  #REDIS solo debe haber una instancia
+  redis:
+    image: redis:latest
+  #PRACTICA2 solo necesita una instancia, aunque podría haber más. Es el único servicio que debe ser accesible desde el exterior
+  # necesita saber cómo disponer del servicio REDIS y lo hará por la variable de entorno
+  practica2:
+    image: cbaronsuarez/practica2:latest
+    ports:
+      - "4567:4567"
+    environment:
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+    deploy:
+      replicas: 1
+#Zookeeper se usará para dar servicio a PRACTICA3. Solo debe haber una instancia.
+  zookeeper:
+    image: zookeeper
+#PRACTICA3 requiere de los servicios de PRACTICA2 y ZOOKEEPER. Necesita variables de entorno que le digan como acceder a ellos.
+# Aunque en principio no ejecutamos ninguna desde el inicio, debemos saber que cuando el usuario decida lanzar multiples instancias
+# Todas compartirán un volumen común donde escribir datos. A este volumen le hemos llamado fichero
+  practica3:
+    image: cbaronsuarez/practica3
+    depends_on:
+      - zookeeper
+      - practica2
+    environment:
+      - PRACTICA2_HOST=http://practica2:4567
+      - ZOOKEEPER_HOST=zookeeper:2181
+    deploy:
+      replicas: 0
+    volumes:
+      - "fichero:/fichero"
+volumes:
+  fichero:
+  
